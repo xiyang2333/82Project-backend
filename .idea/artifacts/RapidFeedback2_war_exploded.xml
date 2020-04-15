@@ -1,0 +1,17 @@
+<component name="ArtifactManager">
+  <artifact type="exploded-war" name="RapidFeedback2:war exploded">
+    <output-path>$PROJECT_DIR$/out/artifacts/RapidFeedback2_war_exploded</output-path>
+    <root id="root">
+      <element id="directory" name="WEB-INF">
+        <element id="directory" name="classes">
+          <element id="module-output" name="RapidFeedback" />
+        </element>
+      </element>
+      <element id="library" level="project" name="lib" />
+      <element id="library" level="project" name="lib2" />
+      <element id="javaee-facet-resources" facet="RapidFeedback/web/Web" />
+      <element id="javaee-facet-resources" facet="RapidFeedback/web/Web3" />
+      <element id="javaee-facet-resources" facet="RapidFeedback/web/Web2" />
+    </root>
+  </artifact>
+</component>

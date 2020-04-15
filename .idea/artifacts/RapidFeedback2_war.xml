@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="war" name="RapidFeedback2:war">
+    <output-path>$PROJECT_DIR$/out/artifacts/RapidFeedback2_war</output-path>
+    <root id="archive" name="RapidFeedback2_war.war">
+      <element id="artifact" artifact-name="RapidFeedback2:war exploded" />
+    </root>
+  </artifact>
+</component>
