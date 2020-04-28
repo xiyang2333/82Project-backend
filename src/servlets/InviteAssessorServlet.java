@@ -156,13 +156,13 @@ public class InviteAssessorServlet extends HttpServlet {
 
 		ServletContext servletContext = this.getServletContext();
 		int principalMakerId = Token.tokenToUser(servletContext, token);
-		if (dbFunction.isMarkerPrincipal(markerId, projectId)) {
-			try {
-				delete_ACK = dbFunction.deleteProjectMarker(markerId, projectId);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
+
+		try {
+			delete_ACK = dbFunction.deleteProjectMarker(markerId, projectId);
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
+		
 		
 
 		// String inviter = inside.token2user(servletContext, token);
