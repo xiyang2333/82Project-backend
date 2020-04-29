@@ -82,9 +82,16 @@ public class AddResultServlet extends HttpServlet {
 
             Remark remark = new Gson().fromJson(remarkSting, new TypeToken<Remark>(){}.getType());
 
+            if(dbFunction.getRemark(projectId, studentId) != null) {
+                // if there are any remark
+                // update it
+                mark_ACK = dbFunction.updateResult(remark, projectId, studentId);
+            } else {
+                mark_ACK = dbFunction.addResult(remark, projectId, studentId);
+            }
+
 //            ArrayList <Assessment> assessList = (ArrayList<Assessment>) JSON.parseArray(assessmentList, Assessment.class);
 //            remark.setAssessmentList(assessList);
-            mark_ACK = dbFunction.addResult(remark, projectId, studentId);
 //        }
 
         // Mention:

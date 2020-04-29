@@ -15,14 +15,16 @@ public class Criterion {
     private double weight;
     private double maximumMark;
     private double markIncrement; // either be 0.25, 0.5 or 1
+    private double finalMark;
     private ArrayList<Field> fieldList = new ArrayList<Field>();
 
-    public Criterion(int id, String name, double weight, double maximumMark, double markIncrement){
+    public Criterion(int id, String name, double weight, double maximumMark, double markIncrement, double finalMark){
         this.id = id;
         this.name = name;
         this.weight = weight;
         this.maximumMark = maximumMark;
         this.markIncrement = markIncrement;
+        this.finalMark = finalMark;
     }
 
     public int getId() {
@@ -73,4 +75,11 @@ public class Criterion {
         this.fieldList = fieldList;
     }
 
+    public double getFinalMark() {
+        return finalMark;
+    }
+
+    public void setFinalMark(double finalMark) {
+        this.finalMark = finalMark;
+    }
 }
