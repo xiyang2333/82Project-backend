@@ -161,8 +161,8 @@ public class SendEmailServlet extends HttpServlet {
 				+ "If you have any problems, please don\'t hesitate to contact the lecturers/tutors: "
 				+ userEmail + "\n\n" + "Regards,\n" + "RapidFeedback Team";
 		String host = "smtp.gmail.com";
-		String user = "feedbackrapid@gmail.com";
-		String pwd = "gkgkbzzbavwowfbh";
+		String user = "RapidFeedbackTeam17@gmail.com";
+		String pwd = "rapidfeedback";
 		send.setAddress(user, targetEmail, subject);
 		send.setAffix(filePath + fileName, fileName);
 		result = send.send(host, user, pwd, msg);
