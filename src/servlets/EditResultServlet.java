@@ -74,15 +74,21 @@ public class EditResultServlet extends HttpServlet {
 //
 //                dbFunction.updateResult(remark, projectId, studentId);
 
+                // move to add result to make the android part easier
+                // default return true
                 jsonSend.put("ACK", true);
             } else if (type == 1) {
                 // update final mark
-                String assessListString = jsonReceive.getString("assessmentList");
-                List<Assessment> assessments = JSON.parseArray(assessListString, Assessment.class);
+                String finalListString = jsonReceive.getString("finalRemarkList");
+                List<FinalRemark> finalRemarks = JSON.parseArray(finalListString, FinalRemark.class);
                 Project project = dbFunction.getProjectAllInfo(projectId);
-                double finalScore = getFinalMark(project, studentId, assessments);
+                ProjectStudent projectStudent = dbFunction.getProjectStudent(studentId, projectId);
+                List<FinalRemark> dbFinalRemarks = dbFunction.getFinalRemark(studentId,projectId);
+                double finalScore = getFinalMark(project, projectStudent, finalRemarks, dbFinalRemarks);
 
-                dbFunction.updateFinalMark(projectId, studentId, assessments, finalScore);
+                // assume every time android part will pass all Criterion
+                boolean inDB = (dbFinalRemarks != null && dbFinalRemarks.size() > 0);
+                dbFunction.updateFinalMark(projectId, studentId, finalRemarks, finalScore, inDB);
 
                 jsonSend.put("ACK", true);
             } else {
@@ -104,42 +110,39 @@ public class EditResultServlet extends HttpServlet {
      *
      * @return the average mark of this criterion
      * @param project the info of project
-     * @param studentId the id of student
-     * @param assessments the mark of assessment
+     * @param projectStudent the info of student in project
+     * @param finalRemarkList the final reamrk of every criterion from client
+     * @param dbFinalRemarks the final reamrk of every criterion in db
      */
-    private double getFinalMark(Project project, int studentId, List<Assessment> assessments) throws Exception {
-        for(ProjectStudent student : project.getStudentList()){
-            if(student.getId() == studentId){
-                double totalMark = 0d;
-                double sumMark = 0d;
+    private double getFinalMark(Project project, ProjectStudent projectStudent,
+                                List<FinalRemark> finalRemarkList, List<FinalRemark> dbFinalRemarks) throws Exception {
+        double totalMark = 0d;
+        double sumMark = 0d;
 
-                ArrayList<Criterion> criteriaList = project.getCriterionList();
-                for(Criterion criterion : criteriaList){
-                    boolean contain = false;
-                    totalMark += criterion.getMaximumMark();
-                    for(Assessment assessment : assessments){
-                        if(assessment.getCriterionId() == criterion.getId()){
-                            sumMark += assessment.getScore();
-                            contain = true;
-                        }
-                    }
-                    // in assessments then continue next
-                    if(contain){
-                        continue;
-                    }
-                    // there are final mark then use it
-                    if(!"0.00".equals(String.valueOf(criterion.getFinalMark()))){
-                        sumMark += criterion.getFinalMark();
-                    } else {
-                        // use average one
-                        sumMark += getAverageCriterionMark(student.getRemarkList(), criterion.getId());
-                    }
+        ArrayList<Criterion> criteriaList = project.getCriterionList();
+        for(Criterion criterion : criteriaList){
+            boolean contain = false;
+            totalMark += criterion.getMaximumMark();
+            for(FinalRemark finalRemark : dbFinalRemarks){
+                if(finalRemark.getCriterionId() == criterion.getId()){
+                    sumMark += finalRemark.getFinalScore();
+                    contain = true;
                 }
-                ArrayList<Remark> remarkList = student.getRemarkList();
-                return sumMark * (100.0 / totalMark);
             }
+            for(FinalRemark finalRemark : finalRemarkList){
+                if(finalRemark.getCriterionId() == criterion.getId()){
+                    sumMark += finalRemark.getFinalScore();
+                    contain = true;
+                }
+            }
+            // in assessments then continue next
+            if(contain){
+                continue;
+            }
+            // there are final mark then use it
+            sumMark += getAverageCriterionMark(projectStudent.getRemarkList(), criterion.getId());
         }
-        throw new Exception("no such sutdent");
+        return sumMark * (100.0 / totalMark);
     }
 
     /**

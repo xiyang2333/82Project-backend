@@ -973,8 +973,8 @@ public class MysqlFunction {
 					PreparedStatement.RETURN_GENERATED_KEYS));
 			statements.add(connection.prepareStatement(
 					"INSERT INTO ProjectCriterion(idProject, idCriterion, " +
-							"maximumMark, weight, markIncrement,finalMark)" +
-							" values(?,?,?,?,?,0)"));
+							"maximumMark, weight, markIncrement)" +
+							" values(?,?,?,?,?)"));
 
 			// add criteria
 			for (Criterion criterion : criterionList) {
@@ -1350,6 +1350,8 @@ public class MysqlFunction {
 					"SELECT * FROM StudentInProject INNER JOIN Student " +
 							"ON StudentInProject.idStudent = Student.id " +
 							"WHERE idProject = ?"));
+			statements.put("getFinalRemark", connection.prepareStatement(
+					"SELECT * FROM FinalRemark WHERE idProject = ? AND idStudent = ?"));
 			statements.put("getStudentMarkers", connection.prepareStatement(
 					"SELECT * FROM Remark WHERE idProject = ? AND idStudent = ?"));
 			statements.put("getAssessments", connection.prepareStatement(
@@ -1422,6 +1424,28 @@ public class MysqlFunction {
 		return project;
 	}
 
+	public ArrayList<FinalRemark> getFinalRemark(int studentId, int projectId) {
+		Connection connection = null;
+		HashMap<String, PreparedStatement> statements = new HashMap<String, PreparedStatement>();
+		try {
+			connection = connectToDB(DB_URL, USER, PASS);
+			statements.put("getFinalRemark", connection.prepareStatement(
+					"SELECT * FROM FinalRemark WHERE idProject = ? AND idStudent = ?"));
+			return getFinalRemarkList(statements,projectId,studentId);
+		} catch (SQLException e) {
+			System.err.format("SQL State: %s\n%s", e.getSQLState(), e.getMessage());
+		} finally {
+			try {
+				if (connection != null) {
+					connection.close();
+				}
+			} catch (SQLException e){
+
+			}
+		}
+		return new ArrayList<FinalRemark>();
+	}
+
 	public ProjectStudent getProjectStudent(int studentId, int projectId) {
 		Connection connection;
 		HashMap<String, PreparedStatement> statements = new HashMap<String, PreparedStatement>();
@@ -1435,6 +1459,8 @@ public class MysqlFunction {
 					"SELECT * FROM StudentInProject INNER JOIN Student " +
 							"ON StudentInProject.idStudent = Student.id " +
 							"WHERE idProject = ? AND idStudent = ?"));
+			statements.put("getFinalRemark", connection.prepareStatement(
+					"SELECT * FROM FinalRemark WHERE idProject = ? AND idStudent = ?"));
 			statements.put("getStudentMarkers", connection.prepareStatement(
 					"SELECT * FROM Remark WHERE idProject = ? AND idStudent = ?"));
 			statements.put("getAssessments", connection.prepareStatement(
@@ -1462,6 +1488,7 @@ public class MysqlFunction {
 						rs.getString("finalRemark"),
 						rs.getInt("ifEmailed"),
 						rs.getInt("idAudio"));
+				student.setFinalRemarkList(getFinalRemarkList(statements, projectId, rs.getInt("id")));
 				student.setRemarkList(getRemarkList(statements, projectId, rs.getInt("id")));
 			}
 			connection.close();
@@ -1535,6 +1562,7 @@ public class MysqlFunction {
 						rs.getString("finalRemark"),
 						rs.getInt("ifEmailed"),
 						rs.getInt("idAudio"));
+				student.setFinalRemarkList(getFinalRemarkList(statements, projectId, rs.getInt("id")));
 				student.setRemarkList(getRemarkList(statements, projectId, rs.getInt("id")));
 				studentList.add(student);
 			}
@@ -1542,6 +1570,30 @@ public class MysqlFunction {
 			System.err.format("SQL State: %s\n%s", e.getSQLState(), e.getMessage());
 		}
 		return studentList;
+	}
+
+	private ArrayList<FinalRemark> getFinalRemarkList(HashMap<String, PreparedStatement> statements,
+													  int projectId, int studentId) {
+		ArrayList<FinalRemark> finalRemarks = new ArrayList<FinalRemark>();
+		PreparedStatement statement = statements.get("getFinalRemark");
+		ResultSet rs;
+		FinalRemark finalRemark;
+		try {
+			statement.setInt(1, projectId);
+			statement.setInt(2, studentId);
+			rs = statement.executeQuery();
+			while (rs.next()) {
+				finalRemark = new FinalRemark(
+						rs.getInt("idCriterion"),
+						rs.getDouble("finalScore"));
+
+				finalRemarks.add(finalRemark);
+			}
+		} catch (SQLException e) {
+			System.err.format("SQL State: %s\n%s", e.getSQLState(), e.getMessage());
+		}
+		return finalRemarks;
+
 	}
 
 	private ArrayList<Remark> getRemarkList(HashMap<String, PreparedStatement> statements,
@@ -1638,8 +1690,7 @@ public class MysqlFunction {
 						rs.getString("name"),
 						rs.getDouble("weight"),
 						rs.getDouble("maximumMark"),
-						rs.getDouble("markIncrement"),
-						rs.getDouble("finalMark"));
+						rs.getDouble("markIncrement"));
 				criterion.setFieldList(getFieldList(statements, rs.getInt("id")));
 				criterionList.add(criterion);
 			}
@@ -2045,6 +2096,8 @@ public class MysqlFunction {
 					"SELECT * FROM Project INNER JOIN Marker " +
 							"ON Project.idPrincipal = Marker.id " +
 							"WHERE Project.id = ?"));
+			statements.put("getFinalRemark", connection.prepareStatement(
+					"SELECT * FROM FinalRemark WHERE idProject = ? AND idStudent = ?"));
 
 			// get projects of a given marker, either be principal or normal marker
 			getProjects = statements.get("getProjects");
@@ -2072,20 +2125,33 @@ public class MysqlFunction {
 		return project;
 	}
 
-	public boolean updateFinalMark(int projectId, int studentId, List<Assessment> assessments, double finalMark) {
+	public boolean updateFinalMark(int projectId, int studentId, List<FinalRemark> finalRemarks, double finalMark, boolean inDB) {
 		boolean updated = false;
 		Connection connection;
 		try {
 			connection = connectToDB(DB_URL, USER, PASS);
-			for(Assessment assessment : assessments){
-				PreparedStatement statement= connection.prepareStatement(
-						"UPDATE ProjectCriterion SET finalMark = ? " +
-								"WHERE idProject = ? AND idCriterion = ?");
+			for(FinalRemark finalRemark : finalRemarks){
+				if (inDB) {
+					PreparedStatement statement = connection.prepareStatement(
+							"UPDATE FinalRemark SET finalScore = ? " +
+									"WHERE idProject = ? AND idStudent = ? AND idCriterion = ?");
 
-				statement.setDouble(1, assessment.getScore());
-				statement.setInt(2, projectId);
-				statement.setInt(3, assessment.getCriterionId());
-				statement.executeUpdate();
+					statement.setDouble(1, finalRemark.getFinalScore());
+					statement.setInt(2, projectId);
+					statement.setInt(3, studentId);
+					statement.setInt(4, finalRemark.getCriterionId());
+					statement.executeUpdate();
+				} else {
+					PreparedStatement statement = connection.prepareStatement(
+							"INSERT INTO FinalRemark(idProject, idCriterion, idStudent, finalScore) " +
+									"VALUES (?,?,?,?)");
+
+					statement.setInt(1, projectId);
+					statement.setInt(2, finalRemark.getCriterionId());
+					statement.setInt(3, studentId);
+					statement.setDouble(4, finalRemark.getFinalScore());
+					statement.executeUpdate();
+				}
 			}
 
 			PreparedStatement statement = connection.prepareStatement(
