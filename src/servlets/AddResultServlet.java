@@ -82,7 +82,7 @@ public class AddResultServlet extends HttpServlet {
 
             Remark remark = new Gson().fromJson(remarkSting, new TypeToken<Remark>(){}.getType());
 
-            if(dbFunction.getRemark(projectId, studentId) != null) {
+            if(dbFunction.getRemark(projectId, studentId, remark.getId()) != null) {
                 // if there are any remark
                 // update it
                 mark_ACK = dbFunction.updateResult(remark, projectId, studentId);
