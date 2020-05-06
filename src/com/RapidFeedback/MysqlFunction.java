@@ -2187,9 +2187,10 @@ public class MysqlFunction {
 			connection = connectToDB(DB_URL, USER, PASS);
 
 			PreparedStatement statement = connection.prepareStatement(
-					"DELETE FROM SelectedComment WHERE idProject = ? AND idStudent = ?");
+					"DELETE FROM SelectedComment WHERE idProject = ? AND idStudent = ? AND idMarker = ?");
 			statement.setInt(1, projectId);
 			statement.setInt(2, studentId);
+			statement.setInt(3, remark.getId());
 			statement.executeUpdate();
 
 			// prepare statements
@@ -2284,7 +2285,7 @@ public class MysqlFunction {
 		return selected;
 	}
 
-	public Remark getRemark(int projectId, int studentId) {
+	public Remark getRemark(int projectId, int studentId, int markerId) {
 //		"SELECT * FROM Remark WHERE idProject = ? AND idStudent = ?"
 
 		Connection connection;
@@ -2294,9 +2295,10 @@ public class MysqlFunction {
 		try {
 			connection = connectToDB(DB_URL, USER, PASS);
 			statement = connection.prepareStatement(
-					"SELECT * FROM Remark WHERE idProject = ? AND idStudent = ?");
+					"SELECT * FROM Remark WHERE idProject = ? AND idStudent = ? AND idMarker = ?");
 			statement.setInt(1, projectId);
 			statement.setInt(2, studentId);
+			statement.setInt(3, markerId);
 			rs = statement.executeQuery();
 			if (rs.next()) {
 				remark = new Remark(
