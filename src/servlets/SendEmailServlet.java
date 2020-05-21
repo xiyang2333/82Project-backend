@@ -100,13 +100,16 @@ public class SendEmailServlet extends HttpServlet {
 			String fileName = projectName + "_" + studentNumber + ".pdf";
 			String markerEmail = dbFunction.getMarkerEmail(markerId);
 			pdf.create(projectStudent, project, filePath, fileName);
-			boolean sendStudent = sendEmail(markerEmail, servletContext,
+//			boolean sendStudent = sendEmail(markerEmail, servletContext,
+//						projectName, studentEmail,
+//						firstName, studentNumber, filePath,
+//						fileName);
+// ifSendBoth: 1:send to student, 2: send to student and assessor.
+			if (ifSendBoth == 1) {
+				sendMail_ACK = sendEmail(markerEmail, servletContext,
 						projectName, studentEmail,
 						firstName, studentNumber, filePath,
 						fileName);
-// ifSendBoth: 1:send to student, 2: send to student and assessor.
-			if (ifSendBoth == 1) {
-				sendMail_ACK = sendStudent;
 			} else if (ifSendBoth == 2) {
 				sendMail_ACK = sendEmail(markerEmail, servletContext, projectName, markerEmail,
 							firstName, studentNumber, filePath, fileName);
