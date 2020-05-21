@@ -73,7 +73,7 @@ public class SendEmailServlet extends HttpServlet {
 		String token = jsonReceive.getString("token");
 		int projectId = jsonReceive.getIntValue("projectId");
 		int studentId = jsonReceive.getIntValue("studentId");
-		// ifSendBoth: 1:send to student, 2: send to assessor.
+                // ifSendBoth: 1:send to marker, 2: send to student.
 		int ifSendBoth = jsonReceive.getIntValue("sendBoth");
 
 		ServletContext servletContext = this.getServletContext();
@@ -104,16 +104,16 @@ public class SendEmailServlet extends HttpServlet {
 //						projectName, studentEmail,
 //						firstName, studentNumber, filePath,
 //						fileName);
-// ifSendBoth: 1:send to student, 2: send to student and assessor.
-			if (ifSendBoth == 1) {
+// ifSendBoth: 1:send to marker, 2: send to student.
+			if (ifSendBoth == 2) {
 				sendMail_ACK = sendEmail(markerEmail, servletContext,
 						projectName, studentEmail,
 						firstName, studentNumber, filePath,
 						fileName);
-			} else if (ifSendBoth == 2) {
+			} else if (ifSendBoth == 1) {
 				sendMail_ACK = sendEmail(markerEmail, servletContext, projectName, markerEmail,
 							firstName, studentNumber, filePath, fileName);
-				}
+			}
 	
 			// change sendEmail_flag
 			recordSentEmail_ACK = dbFunction.sentMail(projectId, studentId);
@@ -159,8 +159,8 @@ public class SendEmailServlet extends HttpServlet {
 		String subject = projectName + " Presentation Result for "
 				+ studentNumber;
 		String msg = "Hi " + firstName + ",\n\n"
-				+ "This is a feedback for your " + projectName
-				+ "Presentation.\n\n"
+				+ "This is the feedback for the" + projectName
+				+ " Presentation.\n\n"
 				+ "If you have any problems, please don\'t hesitate to contact the lecturers/tutors: "
 				+ userEmail + "\n\n" + "Regards,\n" + "RapidFeedback Team";
 		String host = "smtp.gmail.com";
