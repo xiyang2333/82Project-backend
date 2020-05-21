@@ -15,7 +15,7 @@ import java.util.List;
 public class MysqlFunction {
 
 	static final String JDBC_DRIVER = "com.mysql.cj.jdbc.Driver";
-	static final String DB_URL = "jdbc:mysql://127.0.0.1:3306/mydb?serverTimezone=UTC&useSSL=false";
+	static final String DB_URL = "jdbc:mysql://18.140.50.187:3306/mydb?serverTimezone=UTC&useSSL=false";
 
 	static final String USER = "root";
 	static final String PASS = "90082sp";
@@ -1350,6 +1350,8 @@ public class MysqlFunction {
 					"SELECT * FROM StudentInProject INNER JOIN Student " +
 							"ON StudentInProject.idStudent = Student.id " +
 							"WHERE idProject = ?"));
+			statements.put("getFinalRemark", connection.prepareStatement(
+					"SELECT * FROM FinalRemark WHERE idProject = ? AND idStudent = ?"));
 			statements.put("getStudentMarkers", connection.prepareStatement(
 					"SELECT * FROM Remark WHERE idProject = ? AND idStudent = ?"));
 			statements.put("getAssessments", connection.prepareStatement(
@@ -1422,6 +1424,28 @@ public class MysqlFunction {
 		return project;
 	}
 
+	public ArrayList<FinalRemark> getFinalRemark(int studentId, int projectId) {
+		Connection connection = null;
+		HashMap<String, PreparedStatement> statements = new HashMap<String, PreparedStatement>();
+		try {
+			connection = connectToDB(DB_URL, USER, PASS);
+			statements.put("getFinalRemark", connection.prepareStatement(
+					"SELECT * FROM FinalRemark WHERE idProject = ? AND idStudent = ?"));
+			return getFinalRemarkList(statements,projectId,studentId);
+		} catch (SQLException e) {
+			System.err.format("SQL State: %s\n%s", e.getSQLState(), e.getMessage());
+		} finally {
+			try {
+				if (connection != null) {
+					connection.close();
+				}
+			} catch (SQLException e){
+
+			}
+		}
+		return new ArrayList<FinalRemark>();
+	}
+
 	public ProjectStudent getProjectStudent(int studentId, int projectId) {
 		Connection connection;
 		HashMap<String, PreparedStatement> statements = new HashMap<String, PreparedStatement>();
@@ -1435,6 +1459,8 @@ public class MysqlFunction {
 					"SELECT * FROM StudentInProject INNER JOIN Student " +
 							"ON StudentInProject.idStudent = Student.id " +
 							"WHERE idProject = ? AND idStudent = ?"));
+			statements.put("getFinalRemark", connection.prepareStatement(
+					"SELECT * FROM FinalRemark WHERE idProject = ? AND idStudent = ?"));
 			statements.put("getStudentMarkers", connection.prepareStatement(
 					"SELECT * FROM Remark WHERE idProject = ? AND idStudent = ?"));
 			statements.put("getAssessments", connection.prepareStatement(
@@ -1462,6 +1488,7 @@ public class MysqlFunction {
 						rs.getString("finalRemark"),
 						rs.getInt("ifEmailed"),
 						rs.getInt("idAudio"));
+				student.setFinalRemarkList(getFinalRemarkList(statements, projectId, rs.getInt("id")));
 				student.setRemarkList(getRemarkList(statements, projectId, rs.getInt("id")));
 			}
 			connection.close();
@@ -1535,6 +1562,7 @@ public class MysqlFunction {
 						rs.getString("finalRemark"),
 						rs.getInt("ifEmailed"),
 						rs.getInt("idAudio"));
+				student.setFinalRemarkList(getFinalRemarkList(statements, projectId, rs.getInt("id")));
 				student.setRemarkList(getRemarkList(statements, projectId, rs.getInt("id")));
 				studentList.add(student);
 			}
@@ -1542,6 +1570,30 @@ public class MysqlFunction {
 			System.err.format("SQL State: %s\n%s", e.getSQLState(), e.getMessage());
 		}
 		return studentList;
+	}
+
+	private ArrayList<FinalRemark> getFinalRemarkList(HashMap<String, PreparedStatement> statements,
+													  int projectId, int studentId) {
+		ArrayList<FinalRemark> finalRemarks = new ArrayList<FinalRemark>();
+		PreparedStatement statement = statements.get("getFinalRemark");
+		ResultSet rs;
+		FinalRemark finalRemark;
+		try {
+			statement.setInt(1, projectId);
+			statement.setInt(2, studentId);
+			rs = statement.executeQuery();
+			while (rs.next()) {
+				finalRemark = new FinalRemark(
+						rs.getInt("idCriterion"),
+						rs.getDouble("finalScore"));
+
+				finalRemarks.add(finalRemark);
+			}
+		} catch (SQLException e) {
+			System.err.format("SQL State: %s\n%s", e.getSQLState(), e.getMessage());
+		}
+		return finalRemarks;
+
 	}
 
 	private ArrayList<Remark> getRemarkList(HashMap<String, PreparedStatement> statements,
@@ -1994,4 +2046,270 @@ public class MysqlFunction {
 		}
 		return updated;
 	}
+
+	/**
+	 * description: get all project info with id
+	 *
+	 * @return if successfully; if not
+	 * @param projectId id of project
+	 */
+	public Project getProjectAllInfo(int projectId) {
+		Connection connection;
+		HashMap<String, PreparedStatement> statements = new HashMap<String, PreparedStatement>();
+		PreparedStatement getProjects;
+		ResultSet rs;
+		Project project = null;
+		try {
+			connection = connectToDB(DB_URL, USER, PASS);
+
+			// prepare statements
+			statements.put("getProjects", connection.prepareStatement(
+					"SELECT * FROM MarkerInProject RIGHT JOIN Project " +
+							"ON MarkerInProject.idProject = Project.id " +
+							"WHERE Project.id = ? "));
+			statements.put("getCriteria", connection.prepareStatement(
+					"SELECT * FROM ProjectCriterion INNER JOIN Criterion " +
+							"ON ProjectCriterion.idCriterion = Criterion.id " +
+							"WHERE idProject = ?"));
+			statements.put("getFields", connection.prepareStatement(
+					"SELECT * FROM Field WHERE idCriterion = ?"));
+			statements.put("getComments", connection.prepareStatement(
+					"SELECT * FROM Comment WHERE idField = ?"));
+			statements.put("getExComments", connection.prepareStatement(
+					"SELECT * FROM ExpandedComment WHERE idComment = ?"));
+			statements.put("getStudents", connection.prepareStatement(
+					"SELECT * FROM StudentInProject INNER JOIN Student " +
+							"ON StudentInProject.idStudent = Student.id " +
+							"WHERE idProject = ?"));
+			statements.put("getStudentMarkers", connection.prepareStatement(
+					"SELECT * FROM Remark WHERE idProject = ? AND idStudent = ?"));
+			statements.put("getAssessments", connection.prepareStatement(
+					"SELECT * FROM Assessment WHERE idProject = ? AND idStudent = ? AND idMarker = ?"));
+			statements.put("getSelectedComments", connection.prepareStatement(
+					"SELECT * FROM SelectedComment " +
+							"WHERE idProject = ? AND idCriterion = ? AND idStudent = ? AND idMarker = ?"));
+			statements.put("getMarkers", connection.prepareStatement(
+					"SELECT * FROM MarkerInProject INNER JOIN Marker " +
+							"ON MarkerInProject.idMarker = Marker.id " +
+							"WHERE idProject = ?"));
+			statements.put("getPrincipal", connection.prepareStatement(
+					"SELECT * FROM Project INNER JOIN Marker " +
+							"ON Project.idPrincipal = Marker.id " +
+							"WHERE Project.id = ?"));
+			statements.put("getFinalRemark", connection.prepareStatement(
+					"SELECT * FROM FinalRemark WHERE idProject = ? AND idStudent = ?"));
+
+			// get projects of a given marker, either be principal or normal marker
+			getProjects = statements.get("getProjects");
+			getProjects.setInt(1, projectId);
+			rs = getProjects.executeQuery();
+			if (rs.next()) {
+				project = new Project(
+						rs.getInt("id"),
+						rs.getString("name"),
+						rs.getString("subjectName"),
+						rs.getString("subjectCode"),
+						rs.getInt("durationSec"),
+						rs.getInt("warningSec"),
+						rs.getInt("idPrincipal"),
+						rs.getString("description"));
+
+				project.setCriterionList(getCriterionList(statements, rs.getInt("id")));
+				project.setMarkerList(getMarkerList(statements, rs.getInt("id")));
+				project.setStudentList(getStudentList(statements, rs.getInt("id")));
+			}
+			connection.close();
+		} catch (SQLException e) {
+			System.err.format("SQL State: %s\n%s", e.getSQLState(), e.getMessage());
+		}
+		return project;
+	}
+
+	public boolean updateFinalMark(int projectId, int studentId, List<FinalRemark> finalRemarks, double finalMark, boolean inDB) {
+		boolean updated = false;
+		Connection connection;
+		try {
+			connection = connectToDB(DB_URL, USER, PASS);
+			for(FinalRemark finalRemark : finalRemarks){
+				if (inDB) {
+					PreparedStatement statement = connection.prepareStatement(
+							"UPDATE FinalRemark SET finalScore = ? " +
+									"WHERE idProject = ? AND idStudent = ? AND idCriterion = ?");
+
+					statement.setDouble(1, finalRemark.getFinalScore());
+					statement.setInt(2, projectId);
+					statement.setInt(3, studentId);
+					statement.setInt(4, finalRemark.getCriterionId());
+					statement.executeUpdate();
+				} else {
+					PreparedStatement statement = connection.prepareStatement(
+							"INSERT INTO FinalRemark(idProject, idCriterion, idStudent, finalScore) " +
+									"VALUES (?,?,?,?)");
+
+					statement.setInt(1, projectId);
+					statement.setInt(2, finalRemark.getCriterionId());
+					statement.setInt(3, studentId);
+					statement.setDouble(4, finalRemark.getFinalScore());
+					statement.executeUpdate();
+				}
+			}
+
+			PreparedStatement statement = connection.prepareStatement(
+					"UPDATE StudentInProject SET finalScore = ? " +
+							"WHERE idProject = ? AND idStudent = ?");
+
+			statement.setDouble(1, finalMark);
+			statement.setInt(2, projectId);
+			statement.setInt(3, studentId);
+			statement.executeUpdate();
+			updated = true;
+			connection.close();
+		} catch (SQLException e) {
+			System.err.format("SQL State: %s\n%s", e.getSQLState(), e.getMessage());
+		}
+		return updated;
+	}
+
+	/**
+	 * description: update the result for a student in a project from a marker
+	 * @return if successfully; if not
+	 * @param remark
+	 * @param projectId
+	 * @param studentId
+	 */
+	public boolean updateResult(Remark remark, int projectId, int studentId) {
+		boolean added = false;
+		Connection connection;
+		HashMap<String, PreparedStatement> statements = new HashMap<String, PreparedStatement>();
+//		ArrayList<PreparedStatement> statements = new ArrayList<PreparedStatement>();
+		try {
+
+			connection = connectToDB(DB_URL, USER, PASS);
+
+			PreparedStatement statement = connection.prepareStatement(
+					"DELETE FROM SelectedComment WHERE idProject = ? AND idStudent = ? AND idMarker = ?");
+			statement.setInt(1, projectId);
+			statement.setInt(2, studentId);
+			statement.setInt(3, remark.getId());
+			statement.executeUpdate();
+
+			// prepare statements
+			statements.put("updateRemark", connection.prepareStatement(
+					"UPDATE Remark SET text = ? WHERE idProject = ? AND idStudent = ? AND idMarker = ? "));
+			statements.put("updateAssessment", connection.prepareStatement(
+					"UPDATE Assessment SET score = ? " +
+							"WHERE idProject = ? AND idCriterion = ? AND idStudent = ? AND idMarker = ? "));
+			statements.put("selectComment", connection.prepareStatement(
+					"INSERT INTO SelectedComment(idProject, idCriterion, idStudent, idMarker, " +
+							"idField, idExpandedComment) VALUES (?,?,?,?,?,?)"));
+
+			if (updateRemark(statements, remark, projectId, studentId)) {
+				added = true;
+			}
+			connection.close();
+		} catch (SQLException e) {
+			System.err.format("SQL State: %s\n%s", e.getSQLState(), e.getMessage());
+		}
+		return added;
+	}
+
+	private boolean updateRemark(HashMap<String, PreparedStatement> statements, Remark remark,
+							  int projectId, int studentId) {
+//		"INSERT INTO Remark(idProject, idStudent, idMarker, text) values(?,?,?,?)";
+		boolean added = false;
+		PreparedStatement statement = statements.get("updateRemark");
+		try {
+			statement.setString(1, remark.getText());
+			statement.setInt(2, projectId);
+			statement.setInt(3, studentId);
+			statement.setInt(4, remark.getId());
+			statement.executeUpdate();
+			for (int i = 0; i < remark.getAssessmentList().size(); i++) {
+				if (!updateAssessment(statements, remark.getAssessmentList().get(i),
+						projectId, studentId, remark.getId())) {
+					return false;
+				}
+			}
+			added = true;
+		} catch (SQLException e) {
+			System.err.format("SQL State: %s\n%s", e.getSQLState(), e.getMessage());
+		}
+		return added;
+	}
+
+	private boolean updateAssessment(HashMap<String, PreparedStatement> statements, Assessment assessment,
+								  int projectId, int studentId, int markerId) {
+//		"INSERT INTO Assessment(idProject, idCriterion, idStudent, idMarker, score) VALUES (?,?,?,?,?)"
+		boolean added = false;
+		PreparedStatement statement = statements.get("updateAssessment");
+		try {
+			statement.setDouble(1, assessment.getScore());
+			statement.setInt(2, projectId);
+			statement.setInt(3, assessment.getCriterionId());
+			statement.setInt(4, studentId);
+			statement.setInt(5, markerId);
+			statement.executeUpdate();
+
+			for (int i = 0; i < assessment.getSelectedCommentList().size(); i++) {
+				if (!selectComment(statements.get("selectComment"),
+						assessment.getSelectedCommentList().get(i),
+						projectId, assessment.getCriterionId(),
+						studentId, markerId)) {
+					return false;
+				}
+			}
+			added = true;
+		} catch (SQLException e) {
+			System.err.format("SQL State: %s\n%s", e.getSQLState(), e.getMessage());
+		}
+		return added;
+	}
+
+	private boolean updateComment(PreparedStatement statement, SelectedComment selComment,
+								  int projectId, int criterionId, int studentId, int markerId) {
+//			"INSERT INTO SelectedComment(idProject, idCriterion, idStudent, idMarker, idField,
+//				idExpandedComment) VALUES (?,?,?,?,?,？)"
+		boolean selected = false;
+		try {
+			statement.setInt(1, selComment.getFieldId());
+			statement.setInt(2, selComment.getExCommentId());
+			statement.setInt(3, projectId);
+			statement.setInt(4, criterionId);
+			statement.setInt(5, studentId);
+			statement.setInt(6, markerId);
+			statement.executeUpdate();
+			selected = true;
+		} catch (SQLException e) {
+			System.err.format("SQL State: %s\n%s", e.getSQLState(), e.getMessage());
+		}
+		return selected;
+	}
+
+	public Remark getRemark(int projectId, int studentId, int markerId) {
+//		"SELECT * FROM Remark WHERE idProject = ? AND idStudent = ?"
+
+		Connection connection;
+		ResultSet rs;
+		PreparedStatement statement;
+		Remark remark = null;
+		try {
+			connection = connectToDB(DB_URL, USER, PASS);
+			statement = connection.prepareStatement(
+					"SELECT * FROM Remark WHERE idProject = ? AND idStudent = ? AND idMarker = ?");
+			statement.setInt(1, projectId);
+			statement.setInt(2, studentId);
+			statement.setInt(3, markerId);
+			rs = statement.executeQuery();
+			if (rs.next()) {
+				remark = new Remark(
+						rs.getInt("idMarker"),
+						rs.getString("text"));
+			}
+			connection.close();
+		} catch (SQLException e) {
+			System.err.format("SQL State: %s\n%s", e.getSQLState(), e.getMessage());
+		}
+		return remark;
+	}
+
 }

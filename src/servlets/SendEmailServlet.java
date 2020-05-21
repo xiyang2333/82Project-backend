@@ -100,17 +100,20 @@ public class SendEmailServlet extends HttpServlet {
 			String fileName = projectName + "_" + studentNumber + ".pdf";
 			String markerEmail = dbFunction.getMarkerEmail(markerId);
 			pdf.create(projectStudent, project, filePath, fileName);
-			boolean sendStudent = sendEmail(markerEmail, servletContext,
+//			boolean sendStudent = sendEmail(markerEmail, servletContext,
+//						projectName, studentEmail,
+//						firstName, studentNumber, filePath,
+//						fileName);
+// ifSendBoth: 1:send to marker, 2: send to student.
+			if (ifSendBoth == 2) {
+				sendMail_ACK = sendEmail(markerEmail, servletContext,
 						projectName, studentEmail,
 						firstName, studentNumber, filePath,
 						fileName);
-                        // ifSendBoth: 1:send to marker, 2: send to student.
-			if (ifSendBoth == 2) {
-				sendMail_ACK = sendStudent;
 			} else if (ifSendBoth == 1) {
 				sendMail_ACK = sendEmail(markerEmail, servletContext, projectName, markerEmail,
 							firstName, studentNumber, filePath, fileName);
-				}
+			}
 	
 			// change sendEmail_flag
 			recordSentEmail_ACK = dbFunction.sentMail(projectId, studentId);
@@ -156,13 +159,13 @@ public class SendEmailServlet extends HttpServlet {
 		String subject = projectName + " Presentation Result for "
 				+ studentNumber;
 		String msg = "Hi " + firstName + ",\n\n"
-				+ "This is the feedback for " + projectName
+				+ "This is the feedback for the" + projectName
 				+ " Presentation.\n\n"
 				+ "If you have any problems, please don\'t hesitate to contact the lecturers/tutors: "
 				+ userEmail + "\n\n" + "Regards,\n" + "RapidFeedback Team";
 		String host = "smtp.gmail.com";
-		String user = "feedbackrapid@gmail.com";
-		String pwd = "gkgkbzzbavwowfbh";
+		String user = "RapidFeedbackTeam17@gmail.com";
+		String pwd = "rapidfeedback";
 		send.setAddress(user, targetEmail, subject);
 		send.setAffix(filePath + fileName, fileName);
 		result = send.send(host, user, pwd, msg);
