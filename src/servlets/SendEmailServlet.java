@@ -73,7 +73,7 @@ public class SendEmailServlet extends HttpServlet {
 		String token = jsonReceive.getString("token");
 		int projectId = jsonReceive.getIntValue("projectId");
 		int studentId = jsonReceive.getIntValue("studentId");
-		// ifSendBoth: 1:send to student, 2: send to student and assessor.
+		// ifSendBoth: 1:send to student, 2: send to assessor.
 		int ifSendBoth = jsonReceive.getIntValue("sendBoth");
 
 		ServletContext servletContext = this.getServletContext();
@@ -104,10 +104,10 @@ public class SendEmailServlet extends HttpServlet {
 						projectName, studentEmail,
 						firstName, studentNumber, filePath,
 						fileName);
-	
+// ifSendBoth: 1:send to student, 2: send to student and assessor.
 			if (ifSendBoth == 1) {
 				sendMail_ACK = sendStudent;
-			} else if (sendStudent && ifSendBoth == 2) {
+			} else if (ifSendBoth == 2) {
 				sendMail_ACK = sendEmail(markerEmail, servletContext, projectName, markerEmail,
 							firstName, studentNumber, filePath, fileName);
 				}
