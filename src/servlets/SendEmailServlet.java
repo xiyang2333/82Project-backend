@@ -93,7 +93,7 @@ public class SendEmailServlet extends HttpServlet {
 		String projectName = project.getName();
 		String studentEmail = projectStudent.getEmail();
 		String firstName = projectStudent.getFirstName();
-		String filePath = servletContext.getRealPath("/") + "/pdf/";
+		String filePath = servletContext.getRealPath("/");
 		int markerId = Token.tokenToUser(servletContext, token);
 //		if (dbFunction.isMarkerPrincipal(markerId, projectId)) {
 			String studentNumber = String.valueOf(projectStudent.getStudentNumber());
@@ -159,7 +159,7 @@ public class SendEmailServlet extends HttpServlet {
 		String subject = projectName + " Presentation Result for "
 				+ studentNumber;
 		String msg = "Hi " + firstName + ",\n\n"
-				+ "This is the feedback for the" + projectName
+				+ "This is the feedback for the " + projectName
 				+ " Presentation.\n\n"
 				+ "If you have any problems, please don\'t hesitate to contact the lecturers/tutors: "
 				+ userEmail + "\n\n" + "Regards,\n" + "RapidFeedback Team";
